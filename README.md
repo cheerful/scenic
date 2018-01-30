@@ -1,25 +1,25 @@
-# Scenic
+# VersionedDatabaseFunctions
 
-![Scenic Landscape](https://images.thoughtbot.com/announcing-scenic--versioned-database-views-for-rails/MRUcPsxrTGCeWKyE59Zg_landscape.png)
+![VersionedDatabaseFunctions Landscape](https://images.thoughtbot.com/announcing-versioned_database_functions--versioned-database-views-for-rails/MRUcPsxrTGCeWKyE59Zg_landscape.png)
 
-[![Build Status](https://travis-ci.org/thoughtbot/scenic.svg)](https://travis-ci.org/thoughtbot/scenic)
+[![Build Status](https://travis-ci.org/thoughtbot/versioned_database_functions.svg)](https://travis-ci.org/thoughtbot/versioned_database_functions)
 [![Code Climate](https://codeclimate.com/repos/53c9736269568066a3000c35/badges/85aa9b19f3037252c55d/gpa.svg)](https://codeclimate.com/repos/53c9736269568066a3000c35/feed)
-[![Documentation Quality](http://inch-ci.org/github/thoughtbot/scenic.svg?branch=master)](http://inch-ci.org/github/thoughtbot/scenic)
+[![Documentation Quality](http://inch-ci.org/github/thoughtbot/versioned_database_functions.svg?branch=master)](http://inch-ci.org/github/thoughtbot/versioned_database_functions)
 
-Scenic adds methods to `ActiveRecord::Migration` to create and manage database
+VersionedDatabaseFunctions adds methods to `ActiveRecord::Migration` to create and manage database
 views in Rails.
 
-Using Scenic, you can bring the power of SQL views to your Rails application
-without having to switch your schema format to SQL. Scenic provides a convention
+Using VersionedDatabaseFunctions, you can bring the power of SQL views to your Rails application
+without having to switch your schema format to SQL. VersionedDatabaseFunctions provides a convention
 for versioning views that keeps your migration history consistent and reversible
 and avoids having to duplicate SQL strings across migrations. As an added bonus,
 you define the structure of your view in a SQL file, meaning you get full SQL
 syntax highlighting in the editor of your choice and can easily test your SQL in
 the database console during development.
 
-Scenic ships with support for PostgreSQL. The adapter is configurable (see
-`Scenic::Configuration`) and has a minimal interface (see
-`Scenic::Adapters::Postgres`) that other gems can provide.
+VersionedDatabaseFunctions ships with support for PostgreSQL. The adapter is configurable (see
+`VersionedDatabaseFunctions::Configuration`) and has a minimal interface (see
+`VersionedDatabaseFunctions::Adapters::Postgres`) that other gems can provide.
 
 ## Great, how do I create a view?
 
@@ -28,7 +28,7 @@ can create the migration and the corresponding view definition file with the
 following command:
 
 ```sh
-$ rails generate scenic:view search_results
+$ rails generate versioned_database_functions:view search_results
       create  db/views/search_results_v01.sql
       create  db/migrate/[TIMESTAMP]_create_search_results.rb
 ```
@@ -65,15 +65,15 @@ $ rake db:migrate
 
 ## Cool, but what if I need to change that view?
 
-Here's where Scenic really shines. Run that same view generator once more:
+Here's where VersionedDatabaseFunctions really shines. Run that same view generator once more:
 
 ```sh
-$ rails generate scenic:view search_results
+$ rails generate versioned_database_functions:view search_results
       create  db/views/search_results_v02.sql
       create  db/migrate/[TIMESTAMP]_update_search_results_to_version_2.rb
 ```
 
-Scenic detected that we already had an existing `search_results` view at version
+VersionedDatabaseFunctions detected that we already had an existing `search_results` view at version
 1, created a copy of that definition as version 2, and created a migration to
 update to the version 2 schema. All that's left for you to do is tweak the
 schema in the new definition and run the `update_view` migration.
@@ -94,7 +94,7 @@ http://www.postgresql.org/docs/current/static/sql-createview.html
 To start replacing a view run the generator like for a regular change:
 
 ```sh
-$ rails generate scenic:view search_results
+$ rails generate versioned_database_functions:view search_results
       create  db/views/search_results_v02.sql
       create  db/migrate/[TIMESTAMP]_update_search_results_to_version_2.rb
 ```
@@ -140,15 +140,15 @@ class SearchResult < ActiveRecord::Base
 end
 ```
 
-Scenic even provides a `scenic:model` generator that is a superset of
-`scenic:view`.  It will act identically to the Rails `model` generator except
-that it will create a Scenic view migration rather than a table migration.
+VersionedDatabaseFunctions even provides a `versioned_database_functions:model` generator that is a superset of
+`versioned_database_functions:view`.  It will act identically to the Rails `model` generator except
+that it will create a VersionedDatabaseFunctions view migration rather than a table migration.
 
 There is no special base class or mixin needed. If desired, any code the model
 generator adds can be removed without worry.
 
 ```sh
-$ rails generate scenic:model recent_status
+$ rails generate versioned_database_functions:model recent_status
       invoke  active_record
       create    app/models/recent_status.rb
       invoke    test_unit
@@ -161,17 +161,17 @@ $ rails generate scenic:model recent_status
 ## What about materialized views?
 
 Materialized views are essentially SQL queries whose results can be cached to a
-table, indexed, and periodically refreshed when desired. Does Scenic support
+table, indexed, and periodically refreshed when desired. Does VersionedDatabaseFunctions support
 those? Of course!
 
-The `scenic:view` and `scenic:model` generators accept a `--materialized`
+The `versioned_database_functions:view` and `versioned_database_functions:model` generators accept a `--materialized`
 option for this purpose. When used with the model generator, your model will
 have the following method defined as a convenience to aid in scheduling
 refreshes:
 
 ```ruby
 def self.refresh
-  Scenic.database.refresh_materialized_view(table_name, concurrently: false, cascade: false)
+  VersionedDatabaseFunctions.database.refresh_materialized_view(table_name, concurrently: false, cascade: false)
 end
 ```
 
@@ -191,7 +191,7 @@ when you refresh your materialized view.
 
 ## I don't need this view anymore. Make it go away.
 
-Scenic gives you `drop_view` too:
+VersionedDatabaseFunctions gives you `drop_view` too:
 
 ```ruby
 def change
@@ -238,20 +238,20 @@ It's our experience that maintaining a library effectively requires regular use
 of its features. We're not in a good position to support MySQL, SQLite or other
 database users.
 
-Scenic *does* support configuring different database adapters and should be
+VersionedDatabaseFunctions *does* support configuring different database adapters and should be
 extendable with adapter libraries. If you implement such an adapter, we're happy
 to review and link to it. We're also happy to make changes that would better
 accommodate adapter gems.
 
-We are aware of the following existing adapter libraries for Scenic which may
+We are aware of the following existing adapter libraries for VersionedDatabaseFunctions which may
 meet your needs:
 
-* [scenic_sqlite_adapter](https://github.com/pdebelak/scenic_sqlite_adapter)
-* [scenic-mysql_adapter](https://github.com/EmpaticoOrg/scenic-mysql_adapter.)
+* [versioned_database_functions_sqlite_adapter](https://github.com/pdebelak/versioned_database_functions_sqlite_adapter)
+* [versioned_database_functions-mysql_adapter](https://github.com/EmpaticoOrg/versioned_database_functions-mysql_adapter.)
 
 ## About
 
-Scenic is maintained by [Derek Prior] and [Caleb Thompson], funded by
+VersionedDatabaseFunctions is maintained by [Derek Prior] and [Caleb Thompson], funded by
 thoughtbot, inc. The names and logos for thoughtbot are trademarks of
 thoughtbot, inc.
 

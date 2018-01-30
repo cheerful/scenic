@@ -1,7 +1,7 @@
 require "spec_helper"
-require "generators/scenic/view/view_generator"
+require "generators/versioned_database_functions/view/view_generator"
 
-describe Scenic::Generators::ViewGenerator, :generator do
+describe VersionedDatabaseFunctions::Generators::ViewGenerator, :generator do
   it "creates view definition and migration files" do
     migration = file("db/migrate/create_searches.rb")
     view_definition = file("db/views/searches_v01.sql")

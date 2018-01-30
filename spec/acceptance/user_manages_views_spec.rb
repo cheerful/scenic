@@ -2,13 +2,13 @@ require "acceptance_helper"
 
 describe "User manages views" do
   it "handles simple views" do
-    successfully "rails generate scenic:model search_result"
+    successfully "rails generate versioned_database_functions:model search_result"
     write_definition "search_results_v01", "SELECT 'needle'::text AS term"
 
     successfully "rake db:migrate"
     verify_result "SearchResult.take.term", "needle"
 
-    successfully "rails generate scenic:view search_results"
+    successfully "rails generate versioned_database_functions:view search_results"
     verify_identical_view_definitions "search_results_v01", "search_results_v02"
 
     write_definition "search_results_v02", "SELECT 'haystack'::text AS term"
@@ -19,11 +19,11 @@ describe "User manages views" do
 
     successfully "rake db:rollback"
     successfully "rake db:rollback"
-    successfully "rails destroy scenic:model search_result"
+    successfully "rails destroy versioned_database_functions:model search_result"
   end
 
   it "handles materialized views" do
-    successfully "rails generate scenic:model child --materialized"
+    successfully "rails generate versioned_database_functions:model child --materialized"
     write_definition "children_v01", "SELECT 'Owen'::text AS name, 5 AS age"
 
     successfully "rake db:migrate"
@@ -34,7 +34,7 @@ describe "User manages views" do
 
     successfully "rails runner 'Child.refresh'"
 
-    successfully "rails generate scenic:view child --materialized"
+    successfully "rails generate versioned_database_functions:view child --materialized"
     verify_identical_view_definitions "children_v01", "children_v02"
 
     write_definition "children_v02", "SELECT 'Elliot'::text AS name"
@@ -46,12 +46,12 @@ describe "User manages views" do
 
     successfully "rake db:rollback"
     successfully "rake db:rollback"
-    successfully "rails destroy scenic:model child"
+    successfully "rails destroy versioned_database_functions:model child"
   end
 
   it "handles plural view names gracefully during generation" do
-    successfully "rails generate scenic:model search_results --materialized"
-    successfully "rails destroy scenic:model search_results --materialized"
+    successfully "rails generate versioned_database_functions:model search_results --materialized"
+    successfully "rails destroy versioned_database_functions:model search_results --materialized"
   end
 
   def successfully(command)

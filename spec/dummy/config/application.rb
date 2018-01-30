@@ -4,7 +4,7 @@ require File.expand_path("../boot", __FILE__)
 require "active_record/railtie"
 
 Bundler.require(*Rails.groups)
-require "scenic"
+require "versioned_database_functions"
 
 module Dummy
   class Application < Rails::Application

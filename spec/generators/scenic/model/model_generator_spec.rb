@@ -1,12 +1,12 @@
 require "spec_helper"
-require "generators/scenic/model/model_generator"
+require "generators/versioned_database_functions/model/model_generator"
 
-module Scenic::Generators
+module VersionedDatabaseFunctions::Generators
   describe ModelGenerator, :generator do
     before do
       allow(ViewGenerator).to receive(:new)
         .and_return(
-          instance_double("Scenic::Generators::ViewGenerator").as_null_object
+          instance_double("VersionedDatabaseFunctions::Generators::ViewGenerator").as_null_object
         )
     end
 
