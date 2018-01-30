@@ -1,3 +1,3 @@
 module VersionedDatabaseFunctions
-  VERSION = "1.4.1".freeze
+  VERSION = "0.0.1".freeze
 end
