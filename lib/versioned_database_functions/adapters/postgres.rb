@@ -1,9 +1,5 @@
 require_relative "postgres/connection"
-require_relative "postgres/errors"
-require_relative "postgres/index_reapplication"
-require_relative "postgres/indexes"
 require_relative "postgres/functions"
-require_relative "postgres/refresh_dependencies"
 
 module VersionedDatabaseFunctions
   # VersionedDatabaseFunctions database adapters.
