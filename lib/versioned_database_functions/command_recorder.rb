@@ -3,36 +3,64 @@ require "versioned_database_functions/command_recorder/statement_arguments"
 module VersionedDatabaseFunctions
   # @api private
   module CommandRecorder
-    def create_view(*args)
-      record(:create_view, args)
+    def create_function(*args)
+      record(:create_function, args)
     end
 
-    def drop_view(*args)
-      record(:drop_view, args)
+    def drop_function(*args)
+      record(:drop_function, args)
     end
 
-    def update_view(*args)
-      record(:update_view, args)
+    def update_function(*args)
+      record(:update_function, args)
     end
 
-    def replace_view(*args)
-      record(:replace_view, args)
+    def replace_function(*args)
+      record(:replace_function, args)
     end
 
-    def invert_create_view(args)
-      [:drop_view, args]
+    def invert_create_function(args)
+      [:drop_function, args]
     end
 
-    def invert_drop_view(args)
-      perform_versioned_database_functions_inversion(:create_view, args)
+    def invert_drop_function(args)
+      perform_versioned_database_functions_inversion(:create_function, args)
     end
 
-    def invert_update_view(args)
-      perform_versioned_database_functions_inversion(:update_view, args)
+    def invert_update_function(args)
+      perform_versioned_database_functions_inversion(:update_function, args)
     end
 
-    def invert_replace_view(args)
-      perform_versioned_database_functions_inversion(:replace_view, args)
+    def invert_replace_function(args)
+      perform_versioned_database_functions_inversion(:replace_function, args)
+    end
+
+    def create_aggregate(*args)
+      record(:create_aggregate, args)
+    end
+
+    def drop_aggregate(*args)
+      record(:drop_aggregate, args)
+    end
+
+    def update_aggregate(*args)
+      record(:update_aggregate, args)
+    end
+
+    def invert_create_aggregate(args)
+      [:drop_aggregate, args]
+    end
+
+    def invert_drop_aggregate(args)
+      perform_versioned_database_functions_inversion(:create_aggregate, args)
+    end
+
+    def invert_update_aggregate(args)
+      perform_versioned_database_functions_inversion(:update_aggregate, args)
+    end
+
+    def invert_replace_aggregate(args)
+      perform_versioned_database_functions_inversion(:replace_aggregate, args)
     end
 
     private
