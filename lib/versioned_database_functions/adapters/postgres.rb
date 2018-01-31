@@ -219,18 +219,6 @@ module VersionedDatabaseFunctions
         Connection.new(connectable.connection)
       end
 
-      def raise_unless_materialized_views_supported
-        unless connection.supports_materialized_views?
-          raise MaterializedViewsNotSupportedError
-        end
-      end
-
-      def raise_unless_concurrent_refresh_supported
-        unless connection.supports_concurrent_refreshes?
-          raise ConcurrentRefreshesNotSupportedError
-        end
-      end
-
       def refresh_dependencies_for(name)
         VersionedDatabaseFunctions::Adapters::Postgres::RefreshDependencies.call(
           name,
