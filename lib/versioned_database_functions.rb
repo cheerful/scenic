@@ -8,7 +8,6 @@ require "versioned_database_functions/schema_dumper"
 require "versioned_database_functions/statements"
 require "versioned_database_functions/version"
 require "versioned_database_functions/function"
-require "versioned_database_functions/index"
 
 # VersionedDatabaseFunctions adds methods `ActiveRecord::Migration` to create and manage database
 # views in Rails applications.
