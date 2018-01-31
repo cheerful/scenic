@@ -3,164 +3,288 @@ require "spec_helper"
 module VersionedDatabaseFunctions
   module Adapters
     describe Postgres, :db do
-      describe "#create_view" do
-        it "successfully creates a view" do
+      describe "#create_function" do
+        it "successfully creates a function" do
           adapter = Postgres.new
 
-          adapter.create_view("greetings", "SELECT text 'hi' AS greeting")
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
 
-          expect(adapter.views.map(&:name)).to include("greetings")
+          expect(adapter.functions.map(&:name)).to include("add_em")
+        end
+
+        it "successfully creates functions with the same name, but separate signatures" do
+          adapter = Postgres.new
+
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+          adapter.create_function("add_em", "float, float", "float", "SELECT $1 + $2;", "SQL")
+
+          expect(adapter.functions.select{|x| x.name == "add_em"}.map(&:arguments).to_set).to eql [
+            "integer, integer",
+            "double precision, double precision"
+          ].to_set
+        end
+
+        it "successfully creates functions with no arguments" do
+          adapter = Postgres.new
+
+          adapter.create_function("one", "", "integer", "SELECT 1", "SQL")
+
+          expect(adapter.functions.map(&:name)).to include("one")
+        end
+
+        it "breaks if trying to create an existing function" do
+          adapter = Postgres.new
+
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+          expect{
+            adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+          }.to raise_error(ActiveRecord::StatementInvalid, /PG::DuplicateFunction: ERROR:  function "add_em" already exists with same argument types/)
         end
       end
 
-      describe "#create_materialized_view" do
-        it "successfully creates a materialized view" do
+      describe "#create_aggregate" do
+        it "successfully creates an aggregate" do
           adapter = Postgres.new
 
-          adapter.create_materialized_view(
-            "greetings",
-            "SELECT text 'hi' AS greeting",
+          adapter.create_aggregate(
+            "custom_avg",
+            "float8",
+            "sfunc = float8_accum,
+             stype = float8[],
+             finalfunc = float8_avg,
+             initcond = '{0,0,0}'"
           )
 
-          view = adapter.views.first
-          expect(view.name).to eq("greetings")
-          expect(view.materialized).to eq true
+          function = adapter.functions.first
+          expect(function.name).to eq("custom_avg")
+          expect(function.kind).to eq "aggregate"
         end
 
-        it "raises an exception if the version of PostgreSQL is too old" do
-          connection = double("Connection", supports_materialized_views?: false)
-          connectable = double("Connectable", connection: connection)
-          adapter = Postgres.new(connectable)
-          err = VersionedDatabaseFunctions::Adapters::Postgres::MaterializedViewsNotSupportedError
-
-          expect { adapter.create_materialized_view("greetings", "select 1") }
-            .to raise_error err
-        end
-      end
-
-      describe "#replace_view" do
-        it "successfully replaces a view" do
+        it "successfully creates aggregates with the same name, but separate signatures" do
           adapter = Postgres.new
 
-          adapter.create_view("greetings", "SELECT text 'hi' AS greeting")
-
-          view = adapter.views.first.definition
-          expect(view).to eql "SELECT 'hi'::text AS greeting;"
-
-          adapter.replace_view("greetings", "SELECT text 'hello' AS greeting")
-
-          view = adapter.views.first.definition
-          expect(view).to eql "SELECT 'hello'::text AS greeting;"
-        end
-      end
-
-      describe "#drop_view" do
-        it "successfully drops a view" do
-          adapter = Postgres.new
-
-          adapter.create_view("greetings", "SELECT text 'hi' AS greeting")
-          adapter.drop_view("greetings")
-
-          expect(adapter.views.map(&:name)).not_to include("greetings")
-        end
-      end
-
-      describe "#drop_materialized_view" do
-        it "successfully drops a materialized view" do
-          adapter = Postgres.new
-
-          adapter.create_materialized_view(
-            "greetings",
-            "SELECT text 'hi' AS greeting",
+          adapter.create_aggregate(
+            "custom_function",
+            "float8",
+            "sfunc = float8_accum,
+             stype = float8[],
+             finalfunc = float8_avg,
+             initcond = '{0,0,0}'"
           )
-          adapter.drop_materialized_view("greetings")
 
-          expect(adapter.views.map(&:name)).not_to include("greetings")
+          adapter.create_aggregate(
+            "custom_function",
+            "int",
+            "sfunc = int4pl,
+             stype = int,
+             initcond = 10"
+          )
+
+          expect(adapter.functions.select{|x| x.name == "custom_function"}.map(&:arguments).to_set).to eql [
+            "integer", "double precision"
+          ].to_set
         end
 
-        it "raises an exception if the version of PostgreSQL is too old" do
-          connection = double("Connection", supports_materialized_views?: false)
-          connectable = double("Connectable", connection: connection)
-          adapter = Postgres.new(connectable)
-          err = VersionedDatabaseFunctions::Adapters::Postgres::MaterializedViewsNotSupportedError
+        it "breaks if trying to create an existing aggregate" do
+          adapter = Postgres.new
 
-          expect { adapter.drop_materialized_view("greetings") }
-            .to raise_error err
-        end
-      end
+          definition = "sfunc = float8_accum, stype = float8[], finalfunc = float8_avg, initcond = '{0,0,0}'"
+          adapter.create_aggregate("custom_avg", "float8", definition)
 
-      describe "#refresh_materialized_view" do
-        it "raises an exception if the version of PostgreSQL is too old" do
-          connection = double("Connection", supports_materialized_views?: false)
-          connectable = double("Connectable", connection: connection)
-          adapter = Postgres.new(connectable)
-          err = VersionedDatabaseFunctions::Adapters::Postgres::MaterializedViewsNotSupportedError
-
-          expect { adapter.refresh_materialized_view(:tests) }
-            .to raise_error err
-        end
-
-        it "can refresh the views dependencies first" do
-          connection = double("Connection").as_null_object
-          connectable = double("Connectable", connection: connection)
-          adapter = Postgres.new(connectable)
-          expect(VersionedDatabaseFunctions::Adapters::Postgres::RefreshDependencies).
-            to receive(:call).with(:tests, adapter, connection)
-          adapter.refresh_materialized_view(:tests, cascade: true)
-        end
-
-        context "refreshing concurrently" do
-          it "raises descriptive error if concurrent refresh is not possible" do
-            adapter = Postgres.new
-            adapter.create_materialized_view(:tests, "SELECT text 'hi' as text")
-
-            expect {
-              adapter.refresh_materialized_view(:tests, concurrently: true)
-            }.to raise_error(/Create a unique index with no WHERE clause/)
-          end
-
-          it "raises an exception if the version of PostgreSQL is too old" do
-            connection = double("Connection", postgresql_version: 90300)
-            connectable = double("Connectable", connection: connection)
-            adapter = Postgres.new(connectable)
-            e = VersionedDatabaseFunctions::Adapters::Postgres::ConcurrentRefreshesNotSupportedError
-
-            expect {
-              adapter.refresh_materialized_view(:tests, concurrently: true)
-            }.to raise_error e
-          end
+          expect{
+            adapter.create_aggregate("custom_avg", "float8", definition)
+          }.to raise_error(ActiveRecord::StatementInvalid, /PG::DuplicateFunction: ERROR:  function "custom_avg" already exists with same argument types/)
         end
       end
 
-      describe "#views" do
-        it "returns the views defined on this connection" do
+      describe "#replace_function" do
+        it "successfully replaces a function" do
+          adapter = Postgres.new
+
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+
+          function = adapter.functions.first.source_code
+          expect(function).to eql "SELECT $1 + $2;"
+
+          adapter.replace_function("add_em", "integer, integer", "integer", "SELECT $1 + $2 + 3;", "SQL")
+
+          function = adapter.functions.first.source_code
+          expect(function).to eql "SELECT $1 + $2 + 3;"
+        end
+      end
+
+      describe "#update_function" do
+        it "successfully replaces a function" do
+          adapter = Postgres.new
+
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+
+          function = adapter.functions.first.source_code
+          expect(function).to eql "SELECT $1 + $2;"
+
+          adapter.update_function("add_em", "integer, integer", "integer", "SELECT $1 + $2 + 3;", "SQL")
+
+          function = adapter.functions.first.source_code
+          expect(function).to eql "SELECT $1 + $2 + 3;"
+        end
+      end
+
+      describe "#update_aggregate" do
+        it "successfully replaces an aggregate function" do
+          adapter = Postgres.new
+
+          adapter.create_aggregate(
+            "custom_avg",
+            "float8",
+            "sfunc = float8_accum,
+             stype = float8[],
+             finalfunc = float8_avg,
+             initcond = '{0,0,0}'"
+          )
+
+          result = adapter.execute("SELECT custom_avg(num) FROM (VALUES (1), (2), (3)) AS x(num);")
+          expect(result[0]["custom_avg"]).to eql 2.0
+
+          new_source_code = "sfunc = float8_accum,
+             stype = float8[],
+             finalfunc = float8_avg,
+             initcond = '{2,2,3}'"
+
+          adapter.update_aggregate("custom_avg", "float8",new_source_code)
+
+          result = adapter.execute("SELECT custom_avg(num) FROM (VALUES (1), (2), (3)) AS x(num);")
+          expect(result[0]["custom_avg"]).to eql 1.6
+        end
+      end
+
+      describe "#drop_function" do
+        it "successfully drops a function" do
+          adapter = Postgres.new
+
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+          adapter.drop_function("add_em", "integer, integer")
+
+          expect(adapter.functions.map(&:name)).not_to include("add_em")
+        end
+
+        it "only drops a function that has the exact same signature" do
+          adapter = Postgres.new
+
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+          adapter.create_function("add_em", "float, float", "float", "SELECT $1 + $2;", "SQL")
+          adapter.drop_function("add_em", "integer, integer")
+
+          expect(adapter.functions.select{|x| x.name == "add_em"}.map(&:arguments)).to eql ["double precision, double precision"]
+        end
+
+        it "raises an error if there is no matching function with that name" do
+          adapter = Postgres.new
+          expect{
+            adapter.drop_function("not_here", "integer, integer")
+          }.to raise_error(ActiveRecord::StatementInvalid, %r{PG::UndefinedFunction: ERROR:  function not_here\(integer, integer\) does not exist})
+        end
+
+        it "raises an error if there is no matching function with that exact signature" do
+          adapter = Postgres.new
+          adapter.create_function("add_em", "integer, integer", "integer", "SELECT $1 + $2;", "SQL")
+
+          expect{
+            adapter.drop_function("add_em", "")
+          }.to raise_error(ActiveRecord::StatementInvalid, %r{PG::UndefinedFunction: ERROR:  function add_em\(\) does not exist})
+        end
+      end
+
+      describe "#drop_aggregate" do
+        it "successfully drops an aggregate" do
+          adapter = Postgres.new
+
+          adapter.create_aggregate(
+            "custom_function",
+            "int",
+            "sfunc = int4pl,
+             stype = int,
+             initcond = 10"
+          )
+
+          adapter.drop_aggregate("custom_function", "integer")
+
+          expect(adapter.functions.map(&:name)).not_to include("custom_function")
+        end
+
+        it "only drops an aggregate that has the exact same signature" do
+          adapter = Postgres.new
+
+          adapter.create_aggregate(
+            "custom_function",
+            "float8",
+            "sfunc = float8_accum,
+             stype = float8[],
+             finalfunc = float8_avg,
+             initcond = '{0,0,0}'"
+          )
+
+          adapter.create_aggregate(
+            "custom_function",
+            "int",
+            "sfunc = int4pl,
+             stype = int,
+             initcond = 10"
+          )
+
+          adapter.drop_aggregate("custom_function", "integer")
+
+          expect(adapter.functions.select{|x| x.name == "custom_function"}.map(&:arguments)).to eql ["double precision"]
+        end
+
+        it "raises an error if there is no matching aggregate with that name" do
+          adapter = Postgres.new
+          expect{
+            adapter.drop_aggregate("not_here", "integer, integer")
+          }.to raise_error(ActiveRecord::StatementInvalid, %r{PG::UndefinedFunction: ERROR:  aggregate not_here\(integer, integer\) does not exist})
+        end
+
+        it "raises an error if there is no matching aggregate with that exact signature" do
+          adapter = Postgres.new
+          adapter.create_aggregate(
+            "custom_function",
+            "float8",
+            "sfunc = float8_accum,
+             stype = float8[],
+             finalfunc = float8_avg,
+             initcond = '{0,0,0}'"
+          )
+
+          expect{
+            adapter.drop_aggregate("custom_function", "integer")
+          }.to raise_error(ActiveRecord::StatementInvalid, %r{PG::UndefinedFunction: ERROR:  aggregate custom_function\(integer\) does not exist})
+        end
+      end
+
+      describe "#functions" do
+        it "returns the functions defined on this connection" do
           adapter = Postgres.new
 
           ActiveRecord::Base.connection.execute <<-SQL
-            CREATE VIEW parents AS SELECT text 'Joe' AS name
+            CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
           SQL
 
           ActiveRecord::Base.connection.execute <<-SQL
-            CREATE VIEW children AS SELECT text 'Owen' AS name
+            CREATE FUNCTION dup(int) RETURNS TABLE(f1 int, f2 text)
+              AS $$ SELECT $1, CAST($1 AS text) || ' is text' $$
+              LANGUAGE SQL;
           SQL
 
           ActiveRecord::Base.connection.execute <<-SQL
-            CREATE MATERIALIZED VIEW people AS
-            SELECT name FROM parents UNION SELECT name FROM children
+            CREATE AGGREGATE "custom_function"(int)(
+              sfunc = int4pl, stype = int,initcond = 10
+            )
           SQL
 
-          ActiveRecord::Base.connection.execute <<-SQL
-            CREATE VIEW people_with_names AS
-            SELECT name FROM people
-            WHERE name IS NOT NULL
-          SQL
-
-          expect(adapter.views.map(&:name)).to eq [
-            "parents",
-            "children",
-            "people",
-            "people_with_names",
-          ]
+          expect(adapter.functions.map(&:name).to_set).to eq [
+            "add_em",
+            "dup",
+            "custom_function"
+          ].to_set
         end
 
         context "with views in non public schemas" do
@@ -168,19 +292,21 @@ module VersionedDatabaseFunctions
             adapter = Postgres.new
 
             ActiveRecord::Base.connection.execute <<-SQL
-              CREATE VIEW parents AS SELECT text 'Joe' AS name
+              CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
             SQL
 
             ActiveRecord::Base.connection.execute <<-SQL
               CREATE SCHEMA versioned_database_functions;
-              CREATE VIEW versioned_database_functions.parents AS SELECT text 'Maarten' AS name;
+              CREATE AGGREGATE versioned_database_functions."custom_function"(int)(
+                sfunc = int4pl, stype = int,initcond = 10
+              );
               SET search_path TO versioned_database_functions, public;
             SQL
 
-            expect(adapter.views.map(&:name)).to eq [
-              "parents",
-              "versioned_database_functions.parents",
-            ]
+            expect(adapter.functions.map(&:name).to_set).to eq [
+              "add_em",
+              "versioned_database_functions.custom_function",
+            ].to_set
           end
         end
       end
