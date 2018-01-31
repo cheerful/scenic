@@ -7,153 +7,200 @@ module VersionedDatabaseFunctions
       allow(VersionedDatabaseFunctions).to receive(:database).and_return(adapter)
     end
 
-    describe "create_view" do
-      it "creates a view from a file" do
+    describe "create_function" do
+      it "creates a function from a file" do
         version = 15
-        definition_stub = instance_double("Definition", to_sql: "foo")
-        allow(Definition).to receive(:new)
-          .with(:views, version)
+        definition_stub = instance_double("Function", to_sql: "foo")
+        allow(Definitions::Function).to receive(:new)
+          .with(:sum, version)
           .and_return(definition_stub)
 
-        connection.create_view :views, version: version
+        connection.create_function :sum, arguments: "integer, integer", returns: "integer", version: version
 
-        expect(VersionedDatabaseFunctions.database).to have_received(:create_view)
-          .with(:views, definition_stub.to_sql)
+        expect(VersionedDatabaseFunctions.database).to have_received(:create_function)
+          .with(:sum, "integer, integer", "integer", "foo", :sql)
       end
 
-      it "creates a view from a text definition" do
+      it "creates a function from a text definition" do
         sql_definition = "a defintion"
 
-        connection.create_view(:views, sql_definition: sql_definition)
+        connection.create_function(:sum, arguments: "integer, integer", returns: "integer", sql_definition: sql_definition)
 
-        expect(VersionedDatabaseFunctions.database).to have_received(:create_view)
-          .with(:views, sql_definition)
+        expect(VersionedDatabaseFunctions.database).to have_received(:create_function)
+          .with(:sum, "integer, integer", "integer", "a defintion", :sql)
       end
 
-      it "creates version 1 of the view if neither version nor sql_defintion are provided" do
+      it "creates version 1 of the function if neither version nor sql_defintion are provided" do
         version = 1
-        definition_stub = instance_double("Definition", to_sql: "foo")
-        allow(Definition).to receive(:new).
-          with(:views, version).
-          and_return(definition_stub)
+        definition_stub = instance_double("Function", to_sql: "foo")
+        allow(Definitions::Function).to receive(:new)
+          .with(:sum, version)
+          .and_return(definition_stub)
 
-        connection.create_view :views
+        connection.create_function :sum, arguments: "integer, integer", returns: "integer"
 
-        expect(VersionedDatabaseFunctions.database).to have_received(:create_view).
-          with(:views, definition_stub.to_sql)
+        expect(VersionedDatabaseFunctions.database).to have_received(:create_function)
+          .with(:sum, "integer, integer", "integer", "foo", :sql)
       end
 
       it "raises an error if both version and sql_defintion are provided" do
         expect do
-          connection.create_view :foo, version: 1, sql_definition: "a defintion"
+          connection.create_function :sum, arguments: "integer, integer", returns: "integer", version: 10, sql_definition: "hello;"
         end.to raise_error ArgumentError
       end
     end
 
-    describe "create_view :materialized" do
-      it "sends the create_materialized_view message" do
-        allow(Definition).to receive(:new)
-          .and_return(instance_double("VersionedDatabaseFunctions::Definition").as_null_object)
+    describe "drop_function" do
+      it "removes a function from the database" do
+        connection.drop_function :sum, arguments: "integer, integer"
 
-        connection.create_view(:views, version: 1, materialized: true)
-
-        expect(VersionedDatabaseFunctions.database).to have_received(:create_materialized_view)
+        expect(VersionedDatabaseFunctions.database).to have_received(:drop_function).with(:sum, "integer, integer")
       end
     end
 
-    describe "drop_view" do
-      it "removes a view from the database" do
-        connection.drop_view :name
+    describe "update_function" do
+      it "updates the function in the database" do
+        definition_stub = instance_double("Function", to_sql: "foo")
+        allow(Definitions::Function).to receive(:new)
+          .with(:sum, 3)
+          .and_return(definition_stub)
 
-        expect(VersionedDatabaseFunctions.database).to have_received(:drop_view).with(:name)
-      end
-    end
+        connection.update_function(:sum, arguments: "integer, integer", returns: "integer", version: 3)
 
-    describe "drop_view :materialized" do
-      it "removes a materialized view from the database" do
-        connection.drop_view :name, materialized: true
-
-        expect(VersionedDatabaseFunctions.database).to have_received(:drop_materialized_view)
-      end
-    end
-
-    describe "update_view" do
-      it "updates the view in the database" do
-        definition = instance_double("Definition", to_sql: "definition")
-        allow(Definition).to receive(:new)
-          .with(:name, 3)
-          .and_return(definition)
-
-        connection.update_view(:name, version: 3)
-
-        expect(VersionedDatabaseFunctions.database).to have_received(:update_view)
-          .with(:name, definition.to_sql)
+        expect(VersionedDatabaseFunctions.database).to have_received(:update_function)
+          .with(:sum, "integer, integer", "integer", "foo", :sql)
       end
 
-      it "updates a view from a text definition" do
+      it "updates a function from a text definition" do
         sql_definition = "a defintion"
 
-        connection.update_view(:name, sql_definition: sql_definition)
+        connection.update_function(:sum, arguments: "integer, integer", returns: "integer", sql_definition: sql_definition)
 
-        expect(VersionedDatabaseFunctions.database).to have_received(:update_view).
-          with(:name, sql_definition)
-      end
-
-      it "updates the materialized view in the database" do
-        definition = instance_double("Definition", to_sql: "definition")
-        allow(Definition).to receive(:new)
-          .with(:name, 3)
-          .and_return(definition)
-
-        connection.update_view(:name, version: 3, materialized: true)
-
-        expect(VersionedDatabaseFunctions.database).to have_received(:update_materialized_view).
-          with(:name, definition.to_sql)
+        expect(VersionedDatabaseFunctions.database).to have_received(:update_function)
+          .with(:sum, "integer, integer", "integer", "a defintion", :sql)
       end
 
       it "raises an error if not supplied a version or sql_defintion" do
-        expect { connection.update_view :views }.to raise_error(
+        expect { connection.update_function :sum, arguments: "integer, integer", returns: "integer" }.to raise_error(
           ArgumentError,
           /sql_definition or version must be specified/)
       end
 
       it "raises an error if both version and sql_defintion are provided" do
         expect do
-          connection.update_view(
-            :views,
+          connection.update_function(
+            :sum, arguments: "integer, integer", returns: "integer",
             version: 1,
             sql_definition: "a defintion")
         end.to raise_error ArgumentError, /cannot both be set/
       end
     end
 
-    describe "replace_view" do
-      it "replaces the view in the database" do
-        definition = instance_double("Definition", to_sql: "definition")
-        allow(Definition).to receive(:new)
-          .with(:name, 3)
-          .and_return(definition)
+    describe "replace_function" do
+      it "replaces the function in the database" do
+        definition_stub = instance_double("Function", to_sql: "foo")
+        allow(Definitions::Function).to receive(:new)
+          .with(:sum, 3)
+          .and_return(definition_stub)
 
-        connection.replace_view(:name, version: 3)
+        connection.replace_function(:sum, arguments: "integer, integer", returns: "integer", version: 3)
 
-        expect(VersionedDatabaseFunctions.database).to have_received(:replace_view)
-          .with(:name, definition.to_sql)
-      end
-
-      it "fails to replace the materialized view in the database" do
-        definition = instance_double("Definition", to_sql: "definition")
-        allow(Definition).to receive(:new)
-          .with(:name, 3)
-          .and_return(definition)
-
-        expect do
-          connection.replace_view(:name, version: 3, materialized: true)
-        end.to raise_error(ArgumentError, /Cannot replace materialized views/)
+        expect(VersionedDatabaseFunctions.database).to have_received(:replace_function)
+          .with(:sum, "integer, integer", "integer", "foo", :sql)
       end
 
       it "raises an error if not supplied a version" do
-        expect { connection.replace_view :views }
+        expect { connection.replace_function :sum, arguments: "integer, integer", returns: "integer" }
           .to raise_error(ArgumentError, /version is required/)
+      end
+    end
+
+        describe "create_aggregate" do
+      it "creates an aggreate from a file" do
+        version = 15
+        definition_stub = instance_double("Aggregate", to_sql: "foo")
+        allow(Definitions::Aggregate).to receive(:new)
+          .with(:sum, version)
+          .and_return(definition_stub)
+
+        connection.create_aggregate :sum, arguments: "integer, integer", version: version
+
+        expect(VersionedDatabaseFunctions.database).to have_received(:create_aggregate)
+          .with(:sum, "integer, integer", "foo")
+      end
+
+      it "creates an aggreate from a text definition" do
+        sql_definition = "a defintion"
+
+        connection.create_aggregate(:sum, arguments: "integer, integer", sql_definition: sql_definition)
+
+        expect(VersionedDatabaseFunctions.database).to have_received(:create_aggregate)
+          .with(:sum, "integer, integer", "a defintion")
+      end
+
+      it "creates version 1 of the aggregate if neither version nor sql_defintion are provided" do
+        version = 1
+        definition_stub = instance_double("Aggregate", to_sql: "foo")
+        allow(Definitions::Aggregate).to receive(:new)
+          .with(:sum, version)
+          .and_return(definition_stub)
+
+        connection.create_aggregate :sum, arguments: "integer, integer"
+
+        expect(VersionedDatabaseFunctions.database).to have_received(:create_aggregate)
+          .with(:sum, "integer, integer", "foo")
+      end
+
+      it "raises an error if both version and sql_defintion are provided" do
+        expect do
+          connection.create_aggregate :sum, arguments: "integer, integer", version: 10, sql_definition: "hello;"
+        end.to raise_error ArgumentError
+      end
+    end
+
+    describe "drop_aggregate" do
+      it "removes an aggreate from the database" do
+        connection.drop_aggregate :sum, arguments: "integer, integer"
+
+        expect(VersionedDatabaseFunctions.database).to have_received(:drop_aggregate).with(:sum, "integer, integer")
+      end
+    end
+
+    describe "update_aggregate" do
+      it "updates the aggregate in the database" do
+        definition_stub = instance_double("Aggregate", to_sql: "foo")
+        allow(Definitions::Aggregate).to receive(:new)
+          .with(:sum, 3)
+          .and_return(definition_stub)
+
+        connection.update_aggregate(:sum, arguments: "integer, integer", version: 3)
+
+        expect(VersionedDatabaseFunctions.database).to have_received(:update_aggregate)
+          .with(:sum, "integer, integer", "foo")
+      end
+
+      it "updates an aggreate from a text definition" do
+        sql_definition = "a defintion"
+
+        connection.update_aggregate(:sum, arguments: "integer, integer", sql_definition: sql_definition)
+
+        expect(VersionedDatabaseFunctions.database).to have_received(:update_aggregate)
+          .with(:sum, "integer, integer", "a defintion")
+      end
+
+      it "raises an error if not supplied a version or sql_defintion" do
+        expect { connection.update_aggregate :sum, arguments: "integer, integer" }.to raise_error(
+          ArgumentError,
+          /sql_definition or version must be specified/)
+      end
+
+      it "raises an error if both version and sql_defintion are provided" do
+        expect do
+          connection.update_aggregate(
+            :sum, arguments: "integer, integer",
+            version: 1,
+            sql_definition: "a defintion")
+        end.to raise_error ArgumentError, /cannot both be set/
       end
     end
 
