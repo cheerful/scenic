@@ -287,8 +287,8 @@ module VersionedDatabaseFunctions
           ].to_set
         end
 
-        context "with views in non public schemas" do
-          it "returns also the non public views" do
+        context "with functions in non public schemas" do
+          it "returns also the non public functions" do
             adapter = Postgres.new
 
             ActiveRecord::Base.connection.execute <<-SQL

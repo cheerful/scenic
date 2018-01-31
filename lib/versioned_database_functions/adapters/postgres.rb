@@ -76,11 +76,8 @@ module VersionedDatabaseFunctions
       #
       # This results in a {#drop_function} followed by a {#create_function}. The
       # explicitness of that two step process is preferred to `CREATE OR
-      # REPLACE VIEW` because the former ensures that the function you are trying to
-      # update did, in fact, already exist. Additionally, `CREATE OR REPLACE
-      # VIEW` is allowed only to add new columns to the end of an existing
-      # function schema. Existing columns cannot be re-ordered, removed, or have
-      # their types changed. Drop and create overcomes this limitation as well.
+      # REPLACE FUNCTION` because the former ensures that the function you are trying to
+      # update did, in fact, already exist.
       #
       # This is typically called in a migration via {Statements#update_function}.
       #
@@ -93,17 +90,11 @@ module VersionedDatabaseFunctions
         create_function(name, arguments, returns_definition, sql_definition, language)
       end
 
-      # Updates a function in the database.
+      # Updates an aggregate in the database.
       #
-      # This results in a {#drop_function} followed by a {#create_function}. The
-      # explicitness of that two step process is preferred to `CREATE OR
-      # REPLACE VIEW` because the former ensures that the function you are trying to
-      # update did, in fact, already exist. Additionally, `CREATE OR REPLACE
-      # VIEW` is allowed only to add new columns to the end of an existing
-      # function schema. Existing columns cannot be re-ordered, removed, or have
-      # their types changed. Drop and create overcomes this limitation as well.
+      # This results in a {#drop_aggregate} followed by a {#create_aggregate}.
       #
-      # This is typically called in a migration via {Statements#update_function}.
+      # This is typically called in a migration via {Statements#update_aggregate}.
       #
       # @param name The name of the function to update
       # @param sql_definition The SQL schema for the updated function.
@@ -114,19 +105,15 @@ module VersionedDatabaseFunctions
         create_aggregate(name, arguments, sql_definition)
       end
 
-      # Replaces a function in the database using `CREATE OR REPLACE VIEW`.
+      # Replaces a function in the database using `CREATE OR REPLACE FUNCTION`.
       #
-      # This results in a `CREATE OR REPLACE VIEW`. Most of the time the
+      # This results in a `CREATE OR REPLACE FUNCTION`. Most of the time the
       # explicitness of the two step process used in {#update_function} is preferred
-      # to `CREATE OR REPLACE VIEW` because the former ensures that the function you
+      # to `CREATE OR REPLACE FUNCTION` because the former ensures that the function you
       # are trying to update did, in fact, already exist. Additionally,
-      # `CREATE OR REPLACE VIEW` is allowed only to add new columns to the end
-      # of an existing function schema. Existing columns cannot be re-ordered,
-      # removed, or have their types changed. Drop and create overcomes this
-      # limitation as well.
       #
       # However, when there is a tangled dependency tree
-      # `CREATE OR REPLACE VIEW` can be preferable.
+      # `CREATE OR REPLACE FUNCTION` can be preferable.
       #
       # This is typically called in a migration via
       # {Statements#replace_function}.
