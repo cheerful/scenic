@@ -129,16 +129,7 @@ module VersionedDatabaseFunctions
           .with(:sum, "integer, integer", "foo")
       end
 
-      it "creates an aggreate from a text definition" do
-        sql_definition = "a defintion"
-
-        connection.create_aggregate(:sum, arguments: "integer, integer", sql_definition: sql_definition)
-
-        expect(VersionedDatabaseFunctions.database).to have_received(:create_aggregate)
-          .with(:sum, "integer, integer", "a defintion")
-      end
-
-      it "creates version 1 of the aggregate if neither version nor sql_defintion are provided" do
+      it "creates version 1 of the aggregate if version is not provided" do
         version = 1
         definition_stub = instance_double("Aggregate", to_sql: "foo")
         allow(Definitions::Aggregate).to receive(:new)
@@ -149,12 +140,6 @@ module VersionedDatabaseFunctions
 
         expect(VersionedDatabaseFunctions.database).to have_received(:create_aggregate)
           .with(:sum, "integer, integer", "foo")
-      end
-
-      it "raises an error if both version and sql_defintion are provided" do
-        expect do
-          connection.create_aggregate :sum, arguments: "integer, integer", version: 10, sql_definition: "hello;"
-        end.to raise_error ArgumentError
       end
     end
 
@@ -179,28 +164,10 @@ module VersionedDatabaseFunctions
           .with(:sum, "integer, integer", "foo")
       end
 
-      it "updates an aggreate from a text definition" do
-        sql_definition = "a defintion"
-
-        connection.update_aggregate(:sum, arguments: "integer, integer", sql_definition: sql_definition)
-
-        expect(VersionedDatabaseFunctions.database).to have_received(:update_aggregate)
-          .with(:sum, "integer, integer", "a defintion")
-      end
-
-      it "raises an error if not supplied a version or sql_defintion" do
+      it "raises an error if not supplied a version" do
         expect { connection.update_aggregate :sum, arguments: "integer, integer" }.to raise_error(
           ArgumentError,
-          /sql_definition or version must be specified/)
-      end
-
-      it "raises an error if both version and sql_defintion are provided" do
-        expect do
-          connection.update_aggregate(
-            :sum, arguments: "integer, integer",
-            version: 1,
-            sql_definition: "a defintion")
-        end.to raise_error ArgumentError, /cannot both be set/
+          /version must be specified/)
       end
     end
 

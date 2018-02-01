@@ -143,19 +143,12 @@ module VersionedDatabaseFunctions
     #   SQL
     #   )
     #
-    def create_aggregate(name, arguments:, version: nil, sql_definition: nil)
-      if version.present? && sql_definition.present?
-        raise(
-          ArgumentError,
-          "sql_definition and version cannot both be set",
-        )
-      end
-
-      if version.blank? && sql_definition.blank?
+    def create_aggregate(name, arguments:, version: nil)
+      if version.blank?
         version = 1
       end
 
-      sql_definition ||= aggregate_definition(name, version)
+      sql_definition = aggregate_definition(name, version)
 
       VersionedDatabaseFunctions.database.create_aggregate(name, arguments, sql_definition)
     end
@@ -194,22 +187,15 @@ module VersionedDatabaseFunctions
     # @example
     #   update_aggregate :sum, arguments: "integer, integer", returns: "integer", language: :sql, version: 3, revert_to_version: 2
     #
-    def update_aggregate(name, arguments:,version: nil, sql_definition: nil, revert_to_version: nil)
-      if version.blank? && sql_definition.blank?
+    def update_aggregate(name, arguments:,version: nil, revert_to_version: nil)
+      if version.blank?
         raise(
           ArgumentError,
-          "sql_definition or version must be specified",
+          "version must be specified",
         )
       end
 
-      if version.present? && sql_definition.present?
-        raise(
-          ArgumentError,
-          "sql_definition and version cannot both be set",
-        )
-      end
-
-      sql_definition ||= aggregate_definition(name, version)
+      sql_definition = aggregate_definition(name, version)
 
       VersionedDatabaseFunctions.database.update_aggregate(name, arguments, sql_definition)
     end
