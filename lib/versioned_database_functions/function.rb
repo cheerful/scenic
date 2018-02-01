@@ -65,6 +65,9 @@ module VersionedDatabaseFunctions
     # @api private
     def ==(other)
       name == other.name &&
+        arguments == other.arguments &&
+        result_data_type == other.result_data_type &&
+        language == other.language &&
         source_code == other.source_code &&
         kind == other.kind
     end
