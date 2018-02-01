@@ -20,17 +20,33 @@ module VersionedDatabaseFunctions
       end
 
       def path
-        File.join("db", "aggregates", filename)
+        self.class.path(filename)
       end
 
       def version
         @version.to_s.rjust(2, "0")
       end
 
+      def self.latest_version(name)
+        filenames = []
+        search_name = filename(name, "*")
+        Dir.chdir(Rails.root) { filenames = Dir.glob(path(search_name)) }
+        raise RuntimeError, "No definition files for Aggregate" if filenames.empty?
+        filenames.sort.last.scan(/v(\d+).sql/).first.first.to_i
+      end
+
       private
 
+      def self.path(name)
+        File.join("db", "aggregates", name)
+      end
+
+      def self.filename(name, version)
+        "#{name}_v#{version}.sql"
+      end
+
       def filename
-        "#{@name}_v#{version}.sql"
+        self.class.filename(@name, version)
       end
     end
   end

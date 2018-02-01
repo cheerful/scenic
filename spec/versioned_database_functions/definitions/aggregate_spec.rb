@@ -53,4 +53,28 @@ module VersionedDatabaseFunctions::Definitions
       end
     end
   end
+
+  describe "self.latest_version" do
+      it "returns the latest version of an aggregate function" do
+        definition_files = [
+          "db/aggregates/moving_average_v01.sql",
+          "db/aggregates/moving_average_v02.sql",
+          "db/aggregates/moving_average_v03.sql",
+          "db/aggregates/moving_average_v04.sql"
+        ]
+        allow(Dir).to receive(:glob).and_return(definition_files)
+
+        latest_version = Aggregate.latest_version("moving_average")
+
+        expect(latest_version).to eq 4
+      end
+
+      it "raises an error if the file is empty" do
+        allow(Dir).to receive(:glob).and_return([])
+
+        expect do
+          Aggregate.latest_version("moving_average")
+        end.to raise_error RuntimeError
+      end
+    end
 end
