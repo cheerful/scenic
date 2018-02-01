@@ -56,11 +56,10 @@ module VersionedDatabaseFunctions
             namespaced_aggregatename = pg_identifier(aggregatename)
           end
 
-          VersionedDatabaseFunctions::Function.new(
+          VersionedDatabaseFunctions::Aggregate.new(
             name: namespaced_aggregatename,
             kind: result["kind"],
             arguments: result["argument_data_types"],
-            result_data_type: result["result_data_type"],
             source_code: result["source_code"].strip,
             language: result["language"],
           )

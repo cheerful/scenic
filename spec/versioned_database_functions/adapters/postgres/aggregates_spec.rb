@@ -15,6 +15,7 @@ module VersionedDatabaseFunctions
         first = aggregates.first
 
         expect(aggregates.size).to eq 1
+        expect(first.class).to eq Aggregate
         expect(first.name).to eq "custom_function"
         expect(first.kind).to eq "aggregate"
         expect(first.arguments).to eq "integer"
