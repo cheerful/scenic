@@ -1,31 +1,31 @@
 module VersionedDatabaseFunctions
   module Adapters
     class Postgres
-      # Fetches defined functions from the postgres connection.
+      # Fetches defined aggregates from the postgres connection.
       # @api private
-      class Functions
+      class Aggregates
         def initialize(connection)
           @connection = connection
         end
 
-        # All of the functions that this connection has defined.
+        # All of the aggregates that this connection has defined.
         #
-        # This will include aggregate functions if those are supported by the
+        # This will include aggregate aggregates if those are supported by the
         # connection.
         #
         # @return [Array<VersionedDatabaseFunctions::Function>]
         def all
-          functions_from_postgres.map(&method(:to_versioned_database_functions_function))
+          aggregates_from_postgres.map(&method(:to_versioned_database_functions_aggregate))
         end
 
         private
 
         attr_reader :connection
 
-        def functions_from_postgres
+        def aggregates_from_postgres
           connection.execute(<<-SQL)
             SELECT n.nspname as namespace,
-              p.proname as functionname,
+              p.proname as aggregatename,
               pg_catalog.pg_get_function_result(p.oid) as result_data_type,
               pg_catalog.pg_get_function_arguments(p.oid) as argument_data_types,
              CASE
@@ -42,22 +42,22 @@ module VersionedDatabaseFunctions
             WHERE pg_catalog.pg_function_is_visible(p.oid)
                   AND n.nspname <> 'pg_catalog'
                   AND n.nspname <> 'information_schema'
-                  AND (p.proisagg = false AND p.prorettype <> 'pg_catalog.trigger'::pg_catalog.regtype)
+                  AND (p.proisagg = true)
             ORDER BY 1, 2, 4;
           SQL
         end
 
-        def to_versioned_database_functions_function(result)
-          namespace, functionname = result.values_at "namespace", "functionname"
+        def to_versioned_database_functions_aggregate(result)
+          namespace, aggregatename = result.values_at "namespace", "aggregatename"
 
           if namespace != "public"
-            namespaced_functionname = "#{pg_identifier(namespace)}.#{pg_identifier(functionname)}"
+            namespaced_aggregatename = "#{pg_identifier(namespace)}.#{pg_identifier(aggregatename)}"
           else
-            namespaced_functionname = pg_identifier(functionname)
+            namespaced_aggregatename = pg_identifier(aggregatename)
           end
 
           VersionedDatabaseFunctions::Function.new(
-            name: namespaced_functionname,
+            name: namespaced_aggregatename,
             kind: result["kind"],
             arguments: result["argument_data_types"],
             result_data_type: result["result_data_type"],

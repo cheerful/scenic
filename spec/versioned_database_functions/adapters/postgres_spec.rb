@@ -55,9 +55,11 @@ module VersionedDatabaseFunctions
              initcond = '{0,0,0}'"
           )
 
-          function = adapter.functions.first
-          expect(function.name).to eq("custom_avg")
-          expect(function.kind).to eq "aggregate"
+          aggregate = adapter.aggregates.first
+          expect(aggregate.name).to eq("custom_avg")
+          expect(aggregate.kind).to eq "aggregate"
+
+          expect(adapter.functions.size).to eq(0)
         end
 
         it "successfully creates aggregates with the same name, but separate signatures" do
@@ -80,7 +82,7 @@ module VersionedDatabaseFunctions
              initcond = 10"
           )
 
-          expect(adapter.functions.select{|x| x.name == "custom_function"}.map(&:arguments).to_set).to eql [
+          expect(adapter.aggregates.select{|x| x.name == "custom_function"}.map(&:arguments).to_set).to eql [
             "integer", "double precision"
           ].to_set
         end
@@ -208,7 +210,7 @@ module VersionedDatabaseFunctions
 
           adapter.drop_aggregate("custom_function", "integer")
 
-          expect(adapter.functions.map(&:name)).not_to include("custom_function")
+          expect(adapter.aggregates.map(&:name)).not_to include("custom_function")
         end
 
         it "only drops an aggregate that has the exact same signature" do
@@ -233,7 +235,7 @@ module VersionedDatabaseFunctions
 
           adapter.drop_aggregate("custom_function", "integer")
 
-          expect(adapter.functions.select{|x| x.name == "custom_function"}.map(&:arguments)).to eql ["double precision"]
+          expect(adapter.aggregates.select{|x| x.name == "custom_function"}.map(&:arguments)).to eql ["double precision"]
         end
 
         it "raises an error if there is no matching aggregate with that name" do
@@ -283,6 +285,63 @@ module VersionedDatabaseFunctions
           expect(adapter.functions.map(&:name).to_set).to eq [
             "add_em",
             "dup",
+          ].to_set
+        end
+
+        context "with functions in non public schemas" do
+          it "returns also the non public functions" do
+            adapter = Postgres.new
+
+            ActiveRecord::Base.connection.execute <<-SQL
+              CREATE SCHEMA versioned_database_functions;
+            SQL
+
+            ActiveRecord::Base.connection.execute <<-SQL
+              CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
+              CREATE FUNCTION versioned_database_functions.custom_sum(integer, integer) RETURNS integer AS $$ SELECT $1 + $2 + 3; $$ LANGUAGE SQL;
+            SQL
+
+            ActiveRecord::Base.connection.execute <<-SQL
+              CREATE AGGREGATE internal_aggregate(int)(
+                sfunc = int4pl, stype = int,initcond = 10
+              );
+              SET search_path TO versioned_database_functions, public;
+
+              CREATE AGGREGATE versioned_database_functions."custom_function"(int)(
+                sfunc = int4pl, stype = int,initcond = 10
+              );
+              SET search_path TO versioned_database_functions, public;
+            SQL
+
+            expect(adapter.functions.map(&:name).to_set).to eq [
+              "add_em",
+              "versioned_database_functions.custom_sum",
+            ].to_set
+          end
+        end
+      end
+
+      describe "#aggregates" do
+        it "returns the aggregates defined on this connection" do
+          adapter = Postgres.new
+
+          ActiveRecord::Base.connection.execute <<-SQL
+            CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
+          SQL
+
+          ActiveRecord::Base.connection.execute <<-SQL
+            CREATE FUNCTION dup(int) RETURNS TABLE(f1 int, f2 text)
+              AS $$ SELECT $1, CAST($1 AS text) || ' is text' $$
+              LANGUAGE SQL;
+          SQL
+
+          ActiveRecord::Base.connection.execute <<-SQL
+            CREATE AGGREGATE "custom_function"(int)(
+              sfunc = int4pl, stype = int,initcond = 10
+            )
+          SQL
+
+          expect(adapter.aggregates.map(&:name).to_set).to eq [
             "custom_function"
           ].to_set
         end
@@ -292,19 +351,28 @@ module VersionedDatabaseFunctions
             adapter = Postgres.new
 
             ActiveRecord::Base.connection.execute <<-SQL
-              CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
+              CREATE SCHEMA versioned_database_functions;
             SQL
 
             ActiveRecord::Base.connection.execute <<-SQL
-              CREATE SCHEMA versioned_database_functions;
+              CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
+              CREATE FUNCTION versioned_database_functions.custom_sum(integer, integer) RETURNS integer AS $$ SELECT $1 + $2 + 3; $$ LANGUAGE SQL;
+            SQL
+
+            ActiveRecord::Base.connection.execute <<-SQL
+              CREATE AGGREGATE internal_aggregate(int)(
+                sfunc = int4pl, stype = int,initcond = 10
+              );
+              SET search_path TO versioned_database_functions, public;
+
               CREATE AGGREGATE versioned_database_functions."custom_function"(int)(
                 sfunc = int4pl, stype = int,initcond = 10
               );
               SET search_path TO versioned_database_functions, public;
             SQL
 
-            expect(adapter.functions.map(&:name).to_set).to eq [
-              "add_em",
+            expect(adapter.aggregates.map(&:name).to_set).to eq [
+              "internal_aggregate",
               "versioned_database_functions.custom_function",
             ].to_set
           end

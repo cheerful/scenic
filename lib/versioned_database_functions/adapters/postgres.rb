@@ -1,5 +1,6 @@
 require_relative "postgres/connection"
 require_relative "postgres/functions"
+require_relative "postgres/aggregates"
 
 module VersionedDatabaseFunctions
   # VersionedDatabaseFunctions database adapters.
@@ -42,6 +43,16 @@ module VersionedDatabaseFunctions
       # @return [Array<VersionedDatabaseFunctions::Function>]
       def functions
         Functions.new(connection).all
+      end
+
+      # Returns an array of aggregates in the database.
+      #
+      # This collection of aggregates is used by the [VersionedDatabaseFunctions::SchemaDumper] to
+      # populate the `schema.rb` file.
+      #
+      # @return [Array<VersionedDatabaseFunctions::Aggregate>]
+      def aggregates
+        Aggregates.new(connection).all
       end
 
       # Creates a function in the database.
