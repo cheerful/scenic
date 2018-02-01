@@ -5,25 +5,41 @@ module VersionedDatabaseFunctions
   module SchemaDumper
     def tables(stream)
       super
-      views(stream)
+      functions(stream)
+      aggregates(stream)
     end
 
-    def views(stream)
-      if dumpable_views_in_database.any?
+    def functions(stream)
+      if dumpable_functions_in_database.any?
         stream.puts
       end
 
-      dumpable_views_in_database.each do |view|
-        stream.puts(view.to_schema)
-        indexes(view.name, stream)
+      dumpable_functions_in_database.each do |function|
+        stream.puts(function.to_schema)
+      end
+    end
+
+    def aggregates(stream)
+      if dumpable_aggregates_in_database.any?
+        stream.puts
+      end
+
+      dumpable_aggregates_in_database.each do |aggregate|
+        stream.puts(aggregate.to_schema)
       end
     end
 
     private
 
-    def dumpable_views_in_database
-      @dumpable_views_in_database ||= VersionedDatabaseFunctions.database.views.reject do |view|
-        ignored?(view.name)
+    def dumpable_functions_in_database
+      @dumpable_functions_in_database ||= VersionedDatabaseFunctions.database.functions.reject do |function|
+        ignored?(function.name)
+      end
+    end
+
+    def dumpable_aggregates_in_database
+      @dumpable_aggregates_in_database ||= VersionedDatabaseFunctions.database.aggregates.reject do |aggregate|
+        ignored?(aggregate.name)
       end
     end
 
