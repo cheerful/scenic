@@ -2,12 +2,12 @@ require "spec_helper"
 
 module VersionedDatabaseFunctions::CommandRecorder
   describe StatementArguments do
-    describe "#view" do
-      it "is the view name" do
+    describe "#function_or_aggregate" do
+      it "is the function_or_aggregate name" do
         raw_args = [:spaceships, { foo: :bar }]
         args = StatementArguments.new(raw_args)
 
-        expect(args.view).to eq :spaceships
+        expect(args.function_or_aggregate).to eq :spaceships
       end
     end
 

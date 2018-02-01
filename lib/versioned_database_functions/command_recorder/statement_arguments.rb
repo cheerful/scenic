@@ -6,7 +6,7 @@ module VersionedDatabaseFunctions
         @args = args.freeze
       end
 
-      def view
+      def function_or_aggregate
         @args[0]
       end
 
@@ -19,7 +19,7 @@ module VersionedDatabaseFunctions
       end
 
       def invert_version
-        StatementArguments.new([view, options_for_revert])
+        StatementArguments.new([function_or_aggregate, options_for_revert])
       end
 
       def to_a
