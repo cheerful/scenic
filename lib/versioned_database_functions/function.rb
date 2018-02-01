@@ -71,13 +71,12 @@ module VersionedDatabaseFunctions
 
     # @api private
     def to_schema
-      kind_option = "kind: #{kind}, "
+      options = "arguments: #{arguments.inspect}, returns: #{result_data_type.inspect}, language: #{language.inspect}"
 
       <<-DEFINITION
-  create_function #{name.inspect}, #{kind_option} sql_source_code: <<-\SQL
+  create_function #{name.inspect}, #{options}, sql_definition: <<-\SQL
     #{source_code.indent(2)}
   SQL
-
       DEFINITION
     end
 
