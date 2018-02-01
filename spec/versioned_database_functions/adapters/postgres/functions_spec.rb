@@ -9,10 +9,10 @@ module VersionedDatabaseFunctions
           CREATE FUNCTION add_em(integer, integer) RETURNS integer AS $$ SELECT $1 + $2; $$ LANGUAGE SQL;
         SQL
 
-        views = Postgres::Functions.new(connection).all
-        first = views.first
+        functions = Postgres::Functions.new(connection).all
+        first = functions.first
 
-        expect(views.size).to eq 1
+        expect(functions.size).to eq 1
         expect(first.name).to eq "add_em"
         expect(first.kind).to eq "normal"
         expect(first.arguments).to eq "integer, integer"
