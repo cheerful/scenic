@@ -66,7 +66,10 @@ module VersionedDatabaseFunctions
     # @api private
     def to_schema
       options = "arguments: #{arguments.inspect}, version: #{latest_version}"
-      "create_aggregate #{name.inspect}, #{options}"
+
+      <<-DEFINITION
+  create_aggregate #{name.inspect}, #{options}
+      DEFINITION
     end
 
     protected
