@@ -22,7 +22,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
 
     silence_stream(STDOUT) { eval(output) }
 
-    expect(Search.connection.execute("SELECT custom_sum(1, 2);")[0]["custom_sum"]).to eq 3
+    expect(Search.connection.execute("SELECT custom_sum(1, 2);")[0]["custom_sum"].to_s).to eq "3"
   end
 
   context "with functions in non public schemas" do
@@ -71,7 +71,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
 
       silence_stream(STDOUT) { eval(output) }
 
-      expect(Search.connection.execute("SELECT custom_sum(1, 2);")[0]["custom_sum"]).to eq 3
+      expect(Search.connection.execute("SELECT custom_sum(1, 2);")[0]["custom_sum"].to_s).to eq "3"
     end
   end
 
@@ -94,7 +94,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
 
       silence_stream(STDOUT) { eval(output) }
 
-      expect(Search.connection.execute("SELECT custom_sum(1, 2);")[0]["custom_sum"]).to eq 3
+      expect(Search.connection.execute("SELECT custom_sum(1, 2);")[0]["custom_sum"].to_s).to eq "3"
     end
   end
 end
@@ -119,7 +119,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :aggregates do
     silence_stream(STDOUT) { eval(output) }
 
     result = Search.connection.execute("SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);")
-    expect(result[0]["custom_average"]).to eql 2.0
+    expect(result[0]["custom_average"].to_s).to eql "2"
   end
 
   context "with aggregates in non public schemas" do
@@ -180,7 +180,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :aggregates do
       silence_stream(STDOUT) { eval(output) }
 
       result = Search.connection.execute("SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);")
-      expect(result[0]["custom_average"]).to eql 2.0
+      expect(result[0]["custom_average"].to_s).to eql "2"
     end
   end
 

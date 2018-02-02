@@ -1,6 +1,6 @@
-module ViewDefinitionHelpers
-  def with_view_definition(name, version, schema)
-    definition = VersionedDatabaseFunctions::Definition.new(name, version)
+module FunctionDefinitionHelpers
+  def with_function_definition(name, version, schema)
+    definition = VersionedDatabaseFunctions::Definitions::Function.new(name, version)
     FileUtils.mkdir_p(File.dirname(definition.full_path))
     File.open(definition.full_path, "w") { |f| f.write(schema) }
     yield

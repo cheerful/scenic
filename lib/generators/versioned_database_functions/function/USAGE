@@ -1,0 +1,17 @@
+Description:
+  Create a new database function for your application. This will create a new
+  function definition file and the accompanying migration.
+
+  If a function of the given name already exists, create a new version of the function
+  and a migration to replace the old version with the new.
+
+Examples:
+    rails generate versioned_database_functions:function moving_average
+
+      create: db/functions/moving_average_v01.sql
+      create: db/migrate/20140803191158_create_moving_average.rb
+
+    rails generate versioned_database_functions:function moving_average
+
+      create: db/functions/moving_average_v02.sql
+      create: db/migrate/20140804191158_update_moving_average_to_version_2.rb
