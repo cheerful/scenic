@@ -18,6 +18,14 @@ module VersionedDatabaseFunctions
         options[:revert_to_version]
       end
 
+      def arguments
+        options[:arguments]
+      end
+
+      def returns
+        options[:returns]
+      end
+
       def invert_version
         StatementArguments.new([function_or_aggregate, options_for_revert])
       end
