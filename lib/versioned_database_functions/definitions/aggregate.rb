@@ -31,7 +31,7 @@ module VersionedDatabaseFunctions
         filenames = []
         search_name = filename(name, "*")
         Dir.chdir(Rails.root) { filenames = Dir.glob(path(search_name)) }
-        raise RuntimeError, "No definition files for Aggregate" if filenames.empty?
+        raise RuntimeError, "No definition files for aggregate '#{name}'" if filenames.empty?
         filenames.sort.last.scan(/v(\d+).sql/).first.first.to_i
       end
 
