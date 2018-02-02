@@ -145,7 +145,7 @@ module VersionedDatabaseFunctions
           )
 
           result = adapter.execute("SELECT custom_avg(num) FROM (VALUES (1), (2), (3)) AS x(num);")
-          expect(result[0]["custom_avg"].to_s).to eql "2"
+          expect(result[0]["custom_avg"].to_i.to_s).to eql "2"
 
           new_source_code = "sfunc = float8_accum,
              stype = float8[],

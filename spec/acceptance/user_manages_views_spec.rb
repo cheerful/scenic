@@ -6,7 +6,7 @@ describe "User manages functions" do
     write_definition "custom_sum_v01", "SELECT $1 + $2"
 
     successfully "rake db:migrate"
-    verify_result "ActiveRecord::Base.connection.execute('SELECT custom_sum(1, 2);')[0]['custom_sum'].to_s", "3"
+    verify_result "ActiveRecord::Base.connection.execute('SELECT custom_sum(1, 2);')[0]['custom_sum'].to_i.to_s", "3"
 
     successfully "rails generate versioned_database_functions:function custom_sum --arguments='integer, integer' --returns='integer'"
     verify_identical_function_definitions "custom_sum_v01", "custom_sum_v02"
@@ -15,7 +15,7 @@ describe "User manages functions" do
     successfully "rake db:migrate"
 
     successfully "rake db:reset"
-    verify_result "ActiveRecord::Base.connection.execute('SELECT custom_sum(1, 2);')[0]['custom_sum'].to_s", "6"
+    verify_result "ActiveRecord::Base.connection.execute('SELECT custom_sum(1, 2);')[0]['custom_sum'].to_i.to_s", "6"
 
     successfully "rake db:rollback"
     successfully "rake db:rollback"
@@ -66,7 +66,7 @@ describe "User manages aggregates" do
     write_definition "custom_average_v01", "sfunc = float8_accum, stype = float8[], finalfunc = float8_avg, initcond = '{0,0,0}'"
 
     successfully "rake db:migrate"
-    verify_result "ActiveRecord::Base.connection.execute('SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);')[0]['custom_average'].to_s", "2"
+    verify_result "ActiveRecord::Base.connection.execute('SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);')[0]['custom_average'].to_i.to_s", "2"
 
     successfully "rails generate versioned_database_functions:aggregate custom_average --arguments='float8'"
     verify_identical_function_definitions "custom_average_v01", "custom_average_v02"

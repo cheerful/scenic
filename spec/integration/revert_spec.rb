@@ -98,7 +98,7 @@ describe "Reverting versioned_database_functions schema statements", :db, :aggre
 
       result = execute("SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);")[0]["custom_average"]
 
-      expect(result.to_s).to eq "2"
+      expect(result.to_i.to_s).to eq "2"
     end
   end
 

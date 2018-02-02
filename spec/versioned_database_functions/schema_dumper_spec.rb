@@ -119,7 +119,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :aggregates do
     silence_stream(STDOUT) { eval(output) }
 
     result = Search.connection.execute("SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);")
-    expect(result[0]["custom_average"].to_s).to eql "2"
+    expect(result[0]["custom_average"].to_i.to_s).to eql "2"
   end
 
   context "with aggregates in non public schemas" do
@@ -180,7 +180,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :aggregates do
       silence_stream(STDOUT) { eval(output) }
 
       result = Search.connection.execute("SELECT custom_average(num) FROM (VALUES (1.0), (2.0), (3.0)) AS x(num);")
-      expect(result[0]["custom_average"].to_s).to eql "2"
+      expect(result[0]["custom_average"].to_i.to_s).to eql "2"
     end
   end
 
