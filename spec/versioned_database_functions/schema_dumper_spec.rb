@@ -18,7 +18,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
     expect(output).to include 'create_function "custom_sum"'
     expect(output).to include function_definition
 
-    Search.connection.drop_function :custom_sum, arguments: 'integer, integer'
+    Search.connection.drop_function :custom_sum, arguments: 'integer, integer', returns: 'integer'
 
     silence_stream(STDOUT) { eval(output) }
 
@@ -37,7 +37,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
       output = stream.string
       expect(output).to include 'create_function "versioned_database_functions.custom_sum",'
 
-      Search.connection.drop_function :'versioned_database_functions.custom_sum', arguments: 'integer, integer'
+      Search.connection.drop_function :'versioned_database_functions.custom_sum', arguments: 'integer, integer', returns: 'integer'
     end
   end
 
@@ -67,7 +67,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
       expect(output).to include 'create_function "custom_sum",'
       expect(output).to include function_definition
 
-      Search.connection.drop_function :'"custom_sum"', arguments: 'integer, integer'
+      Search.connection.drop_function :'"custom_sum"', arguments: 'integer, integer', returns: 'integer'
 
       silence_stream(STDOUT) { eval(output) }
 
@@ -90,7 +90,7 @@ describe VersionedDatabaseFunctions::SchemaDumper, :db, :functions do
       expect(output).to include 'create_function "versioned_database_functions.custom_sum",'
       expect(output).to include function_definition
 
-      Search.connection.drop_function :'versioned_database_functions."custom_sum"', arguments: 'integer, integer'
+      Search.connection.drop_function :'versioned_database_functions."custom_sum"', arguments: 'integer, integer', returns: 'integer'
 
       silence_stream(STDOUT) { eval(output) }
 

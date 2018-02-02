@@ -52,7 +52,7 @@ module VersionedDatabaseFunctions
 
     describe "drop_function" do
       it "removes a function from the database" do
-        connection.drop_function :sum, arguments: "integer, integer"
+        connection.drop_function :sum, arguments: "integer, integer", returns: 'integer'
 
         expect(VersionedDatabaseFunctions.database).to have_received(:drop_function).with(:sum, "integer, integer")
       end

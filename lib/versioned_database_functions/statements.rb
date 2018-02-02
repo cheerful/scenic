@@ -52,7 +52,7 @@ module VersionedDatabaseFunctions
     # @example Drop a function, rolling back to version 3 on rollback
     #   drop_function(:moving_average, revert_to_version: 3)
     #
-    def drop_function(name, arguments:, revert_to_version: nil)
+    def drop_function(name, arguments:, returns:, revert_to_version: nil)
       VersionedDatabaseFunctions.database.drop_function(name, arguments)
     end
 
