@@ -43,6 +43,7 @@ module VersionedDatabaseFunctions
                   AND n.nspname <> 'pg_catalog'
                   AND n.nspname <> 'information_schema'
                   AND (p.proisagg = false AND p.prorettype <> 'pg_catalog.trigger'::pg_catalog.regtype)
+                  AND LOWER(l.lanname) != 'c'
             ORDER BY 1, 2, 4;
           SQL
         end

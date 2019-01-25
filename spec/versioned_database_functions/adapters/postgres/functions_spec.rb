@@ -20,6 +20,19 @@ module VersionedDatabaseFunctions
         expect(first.language).to eq "sql"
         expect(first.source_code).to eq "SELECT $1 + $2;"
       end
+
+      it "does not return C functions" do
+        connection = ActiveRecord::Base.connection
+        connection.execute <<-SQL
+          CREATE EXTENSION pg_trgm; -- The easiest way to get C functions is to install pg_trgrm
+        SQL
+
+        functions = Postgres::Functions.new(connection).all
+
+        functions.each do |function|
+          expect(function.language).not_to eq "c"
+        end
+      end
     end
   end
 end
